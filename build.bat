@@ -1,44 +1,94 @@
 @echo off
 
-echo /============ PREPARE =============
-echo /
+call config
 
-if exist .\amxmodx\plugins rd /S /q .\amxmodx\plugins
-mkdir .\amxmodx\plugins
-cd .\amxmodx\plugins
-
-echo /
-echo /
-echo /============ COMPILE =============
-echo /
-
-for /R ..\scripting\ %%F in (*.sma) do (
-    echo / /
-    echo / / Compile %%~nF:
-    echo / /
-    amxx190 %%F
+echo Copy includes to compiler...
+if exist "%INCLUDES_PATH%" (
+    call :copy %INCLUDES_PATH%\*, %AMXX_COMPILER_INCLUDES_PATH%
 )
 
-echo /
-echo /
-echo /============ BUILD =============
-echo /
+echo Cleanup old compiled plugins...
+call :deldir %COMPILER_OUTPUT_PATH%
+call :deldir %AMXMODX_PATH%\plugins
 
-cd ..\..
-mkdir .\.build\VipM-MultiJump\amxmodx\scripting\
+if not "%PACKAGE_COMPILED_PLUGINS_USE%" == "1" goto after-compile
 
-xcopy .\amxmodx\ .\.build\VipM-MultiJump\amxmodx\ /s /e /y
-copy .\README.md .\.build\
+echo Prepare for compiling plugins...
 
-if exist .\VipM-MultiJump.zip del .\VipM-MultiJump.zip
-cd .\.build
-zip -r .\..\VipM-MultiJump.zip .
-cd ..
-rmdir .\.build /s /q
+call :makedir %PLUGINS_LIST_PATH%
+call :del %PLUGINS_LIST%
+if "%PACKAGE_PLUINGS_LIST_USE%" == "1" (
+    echo. 2>%PLUGINS_LIST%
+)
 
-echo /
-echo /
-echo /============ END =============
-echo /
+echo Compile plugins...
 
-set /p q=
+call :makedir %COMPILER_OUTPUT_PATH%
+cd %COMPILER_OUTPUT_PATH%
+for /R %AMXMODX_PATH%\scripting %%F in (*.sma) do (
+    echo.
+    echo Compile %%~nF:
+    
+    if "%PACKAGE_DEBUG%" == "1" (
+       %AMXX_COMPILER_EXECUTABLE_PATH% DEBUG=1 %%F
+    ) else (
+       %AMXX_COMPILER_EXECUTABLE_PATH% %%F
+    )
+
+    if errorlevel 1 (
+        echo.
+        echo Plugin %%~nF compiled with error.
+        set /p q=
+        exit /b %errorlevel%
+    )
+
+    if "%PACKAGE_PLUINGS_LIST_USE%" == "1" (
+       echo %%~nF.amxx>>%PLUGINS_LIST%
+    )
+)
+cd %ROOT_PATH%
+:after-compile
+
+echo Prepare files...
+call :makedir %BUILD_AMXMODX_PATH%
+call :copy "%AMXMODX_PATH%\*", "%BUILD_AMXMODX_PATH%"
+
+if "%PACKAGE_README_USE%" == "1" (
+    call :copy "%README_FILE%", "%BUILD_ROOT_PATH%"
+)
+
+if "%PACKAGE_ASSETS_USE%" == "1" (
+    call :makedir %BUILD_ASSETS_PATH%
+    call :copy %ASSETS_PATH%\* %BUILD_ASSETS_PATH%
+)
+
+echo Compress files to ZIP archive...
+call :del %ZIP_FILE%
+call :zip %BUILD_ROOT_PATH%/*, %ZIP_FILE%
+
+echo Cleanup temp files...
+call :deldir %BUILD_ROOT_PATH%
+
+echo Build finished.
+
+exit 0
+
+:makedir
+    if not exist %~1 mkdir %~1
+exit /b
+
+:deldir
+    if exist %~1 rd /S /q %~1
+exit /b
+
+:del
+    if exist %~1 del %~1
+exit /b
+
+:copy
+    powershell Copy-Item -Path %~1 -Destination %~2 -Recurse -Force
+exit /b
+
+:zip
+    powershell Compress-Archive %~1 %~2 -Force
+exit /b

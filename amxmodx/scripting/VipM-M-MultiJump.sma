@@ -7,14 +7,16 @@
 #pragma compress 1
 
 public stock const PluginName[] = "[VipM][M] Multi Jump";
-public stock const PluginVersion[] = "1.0.0";
+public stock const PluginVersion[] = "1.1.0";
 public stock const PluginAuthor[] = "ArKaNeMaN";
 public stock const PluginURL[] = "https://github.com/ArKaNeMaN/VipM-M-MultiJump";
 public stock const PluginDescription[] = "Multi jump module for Vip Modular.";
 
 new const MODULE_NAME[] = "MultiJump";
 new const PARAM_COUNT_NAME[] = "Count";
+new const PARAM_VEL_MULT_NAME[] = "VelMult";
 
+new Float:g_iUserVelocityMultiplier[MAX_PLAYERS + 1] = {1.0, ...};
 new g_iUserMaxJumps[MAX_PLAYERS + 1] = {0, ...};
 new g_iUserJumpsCounter[MAX_PLAYERS + 1] = {0, ...};
 
@@ -25,7 +27,8 @@ public VipM_OnInitModules() {
 
     VipM_Modules_Register(MODULE_NAME, false);
     VipM_Modules_AddParams(MODULE_NAME,
-        PARAM_COUNT_NAME, ptInteger, false
+        PARAM_COUNT_NAME, ptInteger, false,
+        PARAM_VEL_MULT_NAME, ptFloat, false
     );
     VipM_Modules_RegisterEvent(MODULE_NAME, Module_OnActivated, "@OnActivated");
     VipM_Modules_RegisterEvent(MODULE_NAME, Module_OnCompareParams, "@OnCompareParams");
@@ -34,6 +37,7 @@ public VipM_OnInitModules() {
 @Cmd_Test(const UserId) {
     client_print(UserId, print_console, "[%s] g_iUserMaxJumps[%d] = %d", MODULE_NAME, UserId, g_iUserMaxJumps[UserId]);
     client_print(UserId, print_console, "[%s] g_iUserJumpsCounter[%d] = %d", MODULE_NAME, UserId, g_iUserJumpsCounter[UserId]);
+    client_print(UserId, print_console, "[%s] g_iUserVelocityMultiplier[%d] = %d", MODULE_NAME, UserId, g_iUserVelocityMultiplier[UserId]);
 }
 
 public VipM_OnUserUpdated(const UserId) {
@@ -44,6 +48,7 @@ public VipM_OnUserUpdated(const UserId) {
     }
 
     g_iUserMaxJumps[UserId] = VipM_Params_GetInt(Params, PARAM_COUNT_NAME, 1);
+    g_iUserVelocityMultiplier[UserId] = VipM_Params_GetFloat(Params, PARAM_VEL_MULT_NAME, 1.0);
 }
 
 public client_putinserver(UserId) {
@@ -103,6 +108,7 @@ Trie:@OnCompareParams(const Trie:MainParams, const Trie:NewParams) {
         new Float:szVelocity[3];
         pev(UserId, pev_velocity, szVelocity);
         szVelocity[2] = random_float(295.0, 305.0);
+        szVelocity[2] *= g_iUserVelocityMultiplier[UserId];
         set_pev(UserId, pev_velocity, szVelocity);
     }
 
