@@ -1,7 +1,11 @@
 #include <amxmodx>
 #include <hamsandwich>
 #include <fakemeta>
+#include <reapi>
 #include <VipModular>
+
+#define GetRound() \
+    (get_member_game(m_iTotalRoundsPlayed) + 1)
 
 #pragma semicolon 1
 #pragma compress 1
@@ -16,10 +20,12 @@ new const MODULE_NAME[] = "MultiJump";
 new const PARAM_COUNT_NAME[] = "Count";
 new const PARAM_VEL_MULT_NAME[] = "VelMult";
 new const PARAM_COOLDOWN_NAME[] = "Cooldown";
+new const PARAM_MIN_ROUND_NAME[] = "MinRound"; // Не лимитами, т.к. часто дёргается
 
 new g_iUserMaxJumps[MAX_PLAYERS + 1] = {0, ...};
 new Float:g_iUserVelocityMultiplier[MAX_PLAYERS + 1] = {1.0, ...};
 new Float:g_fUserCooldownDuration[MAX_PLAYERS + 1] = {0.0, ...};
+new g_iUserMinRound[MAX_PLAYERS + 1] = {0, ...};
 
 new g_iUserJumpsCounter[MAX_PLAYERS + 1] = {0, ...};
 new Float:g_fUserCooldownExpiresAt[MAX_PLAYERS + 1] = {0.0, ...};
@@ -43,10 +49,12 @@ public VipM_OnUserUpdated(const UserId) {
     g_iUserMaxJumps[UserId] = VipM_Params_GetInt(Params, PARAM_COUNT_NAME, 0);
     g_iUserVelocityMultiplier[UserId] = VipM_Params_GetFloat(Params, PARAM_VEL_MULT_NAME, 1.0);
     g_fUserCooldownDuration[UserId] = VipM_Params_GetFloat(Params, PARAM_COOLDOWN_NAME, 0.0);
+    g_iUserMinRound[UserId] = VipM_Params_GetInt(Params, PARAM_MIN_ROUND_NAME, 0);
 }
 
 public client_putinserver(UserId) {
     g_iUserMaxJumps[UserId] = 0;
+    g_iUserMinRound[UserId] = 0;
     g_iUserJumpsCounter[UserId] = 0;
     g_iUserVelocityMultiplier[UserId] = 1.0;
 }
@@ -106,6 +114,7 @@ Trie:@OnCompareParams(const Trie:MainParams, const Trie:NewParams) {
             g_fUserCooldownExpiresAt[UserId] <= 0.0
             || g_fUserCooldownExpiresAt[UserId] <= fGameTime
         )
+        && GetRound() >= g_iUserMinRound[UserId]
     ) {
         g_iUserJumpsCounter[UserId]++;
         
