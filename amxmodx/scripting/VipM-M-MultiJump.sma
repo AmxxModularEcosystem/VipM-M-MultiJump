@@ -15,10 +15,14 @@ public stock const PluginDescription[] = "Multi jump module for Vip Modular.";
 new const MODULE_NAME[] = "MultiJump";
 new const PARAM_COUNT_NAME[] = "Count";
 new const PARAM_VEL_MULT_NAME[] = "VelMult";
+new const PARAM_COOLDOWN_NAME[] = "Cooldown";
 
-new Float:g_iUserVelocityMultiplier[MAX_PLAYERS + 1] = {1.0, ...};
 new g_iUserMaxJumps[MAX_PLAYERS + 1] = {0, ...};
+new Float:g_iUserVelocityMultiplier[MAX_PLAYERS + 1] = {1.0, ...};
+new Float:g_fUserCooldownDuration[MAX_PLAYERS + 1] = {0.0, ...};
+
 new g_iUserJumpsCounter[MAX_PLAYERS + 1] = {0, ...};
+new Float:g_fUserCooldownExpiresAt[MAX_PLAYERS + 1] = {0.0, ...};
 
 public VipM_OnInitModules() {
     register_plugin(PluginName, PluginVersion, PluginAuthor);
@@ -26,7 +30,8 @@ public VipM_OnInitModules() {
     VipM_Modules_Register(MODULE_NAME, false);
     VipM_Modules_AddParams(MODULE_NAME,
         PARAM_COUNT_NAME, ptInteger, false,
-        PARAM_VEL_MULT_NAME, ptFloat, false
+        PARAM_VEL_MULT_NAME, ptFloat, false,
+        PARAM_COOLDOWN_NAME, ptFloat, false
     );
     VipM_Modules_RegisterEvent(MODULE_NAME, Module_OnActivated, "@OnActivated");
     VipM_Modules_RegisterEvent(MODULE_NAME, Module_OnCompareParams, "@OnCompareParams");
@@ -37,6 +42,7 @@ public VipM_OnUserUpdated(const UserId) {
 
     g_iUserMaxJumps[UserId] = VipM_Params_GetInt(Params, PARAM_COUNT_NAME, 0);
     g_iUserVelocityMultiplier[UserId] = VipM_Params_GetFloat(Params, PARAM_VEL_MULT_NAME, 1.0);
+    g_fUserCooldownDuration[UserId] = VipM_Params_GetFloat(Params, PARAM_COOLDOWN_NAME, 0.0);
 }
 
 public client_putinserver(UserId) {
@@ -80,7 +86,12 @@ Trie:@OnCompareParams(const Trie:MainParams, const Trie:NewParams) {
         return HAM_IGNORED;
     }
 
+    new Float:fGameTime = get_gametime();
+
     if (pev(UserId, pev_flags) & FL_ONGROUND) {
+        if (g_iUserJumpsCounter[UserId] > 0 && g_fUserCooldownDuration[UserId] > 0.0) {
+            g_fUserCooldownExpiresAt[UserId] = fGameTime + g_fUserCooldownDuration[UserId];
+        }
         g_iUserJumpsCounter[UserId] = 0;
         return HAM_IGNORED;
     }
@@ -90,6 +101,10 @@ Trie:@OnCompareParams(const Trie:MainParams, const Trie:NewParams) {
         && (
             g_iUserMaxJumps[UserId] < 0
             || g_iUserJumpsCounter[UserId] < g_iUserMaxJumps[UserId]
+        )
+        && (
+            g_fUserCooldownExpiresAt[UserId] <= 0.0
+            || g_fUserCooldownExpiresAt[UserId] <= fGameTime
         )
     ) {
         g_iUserJumpsCounter[UserId]++;
