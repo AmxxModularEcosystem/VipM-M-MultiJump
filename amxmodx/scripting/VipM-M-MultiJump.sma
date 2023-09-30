@@ -11,7 +11,7 @@
 #pragma compress 1
 
 public stock const PluginName[] = "[VipM-M] Multi Jump";
-public stock const PluginVersion[] = "1.1.1";
+public stock const PluginVersion[] = "1.2.0";
 public stock const PluginAuthor[] = "ArKaNeMaN";
 public stock const PluginURL[] = "https://github.com/ArKaNeMaN/VipM-M-MultiJump";
 public stock const PluginDescription[] = "Multi jump module for Vip Modular.";
@@ -37,7 +37,8 @@ public VipM_OnInitModules() {
     VipM_Modules_AddParams(MODULE_NAME,
         PARAM_COUNT_NAME, ptInteger, false,
         PARAM_VEL_MULT_NAME, ptFloat, false,
-        PARAM_COOLDOWN_NAME, ptFloat, false
+        PARAM_COOLDOWN_NAME, ptFloat, false,
+        PARAM_MIN_ROUND_NAME, ptInteger, false
     );
     VipM_Modules_RegisterEvent(MODULE_NAME, Module_OnActivated, "@OnActivated");
     VipM_Modules_RegisterEvent(MODULE_NAME, Module_OnCompareParams, "@OnCompareParams");
@@ -54,9 +55,12 @@ public VipM_OnUserUpdated(const UserId) {
 
 public client_putinserver(UserId) {
     g_iUserMaxJumps[UserId] = 0;
-    g_iUserMinRound[UserId] = 0;
-    g_iUserJumpsCounter[UserId] = 0;
     g_iUserVelocityMultiplier[UserId] = 1.0;
+    g_fUserCooldownDuration[UserId] = 0.0;
+    g_iUserMinRound[UserId] = 0;
+
+    g_iUserJumpsCounter[UserId] = 0;
+    g_fUserCooldownExpiresAt[UserId] = 0.0;
 }
 
 @OnActivated() {

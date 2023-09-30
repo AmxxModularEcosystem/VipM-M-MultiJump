@@ -1,0 +1,7 @@
+{
+    "Module": "MultiJump",
+    "Count": 2,
+    "VelMult": 1.5,
+    "MinRound": 2,
+    "Cooldown": 5.0
+}
