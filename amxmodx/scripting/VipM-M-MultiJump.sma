@@ -47,7 +47,7 @@ public VipM_OnInitModules() {
 public VipM_OnUserUpdated(const UserId) {
     new Trie:Params = VipM_Modules_GetParams(MODULE_NAME, UserId);
 
-    g_iUserMaxJumps[UserId] = VipM_Params_GetInt(Params, PARAM_COUNT_NAME, 0);
+    g_iUserMaxJumps[UserId] = VipM_Params_GetInt(Params, PARAM_COUNT_NAME, 1);
     g_iUserVelocityMultiplier[UserId] = VipM_Params_GetFloat(Params, PARAM_VEL_MULT_NAME, 1.0);
     g_fUserCooldownDuration[UserId] = VipM_Params_GetFloat(Params, PARAM_COOLDOWN_NAME, 0.0);
     g_iUserMinRound[UserId] = VipM_Params_GetInt(Params, PARAM_MIN_ROUND_NAME, 0);
