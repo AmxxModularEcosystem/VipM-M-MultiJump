@@ -45,22 +45,30 @@ public VipM_OnInitModules() {
 }
 
 public VipM_OnUserUpdated(const UserId) {
-    new Trie:Params = VipM_Modules_GetParams(MODULE_NAME, UserId);
-
-    g_iUserMaxJumps[UserId] = VipM_Params_GetInt(Params, PARAM_COUNT_NAME, 1);
-    g_iUserVelocityMultiplier[UserId] = VipM_Params_GetFloat(Params, PARAM_VEL_MULT_NAME, 1.0);
-    g_fUserCooldownDuration[UserId] = VipM_Params_GetFloat(Params, PARAM_COOLDOWN_NAME, 0.0);
-    g_iUserMinRound[UserId] = VipM_Params_GetInt(Params, PARAM_MIN_ROUND_NAME, 0);
+    if (VipM_Modules_HasModule(MODULE_NAME, UserId)) {
+        new Trie:Params = VipM_Modules_GetParams(MODULE_NAME, UserId);
+        
+        g_iUserMaxJumps[UserId] = VipM_Params_GetInt(Params, PARAM_COUNT_NAME, 1);
+        g_iUserVelocityMultiplier[UserId] = VipM_Params_GetFloat(Params, PARAM_VEL_MULT_NAME, 1.0);
+        g_fUserCooldownDuration[UserId] = VipM_Params_GetFloat(Params, PARAM_COOLDOWN_NAME, 0.0);
+        g_iUserMinRound[UserId] = VipM_Params_GetInt(Params, PARAM_MIN_ROUND_NAME, 0);
+    } else {
+        SetDefaultValues(UserId);
+    }
 }
 
 public client_putinserver(UserId) {
+    SetDefaultValues(UserId);
+
+    g_iUserJumpsCounter[UserId] = 0;
+    g_fUserCooldownExpiresAt[UserId] = 0.0;
+}
+
+SetDefaultValues(const UserId) {
     g_iUserMaxJumps[UserId] = 0;
     g_iUserVelocityMultiplier[UserId] = 1.0;
     g_fUserCooldownDuration[UserId] = 0.0;
     g_iUserMinRound[UserId] = 0;
-
-    g_iUserJumpsCounter[UserId] = 0;
-    g_fUserCooldownExpiresAt[UserId] = 0.0;
 }
 
 @OnActivated() {
